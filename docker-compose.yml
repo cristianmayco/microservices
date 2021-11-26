@@ -1,0 +1,63 @@
+version: '3.4'
+
+services:
+
+  zipkin-server:
+    image: openzipkin/zipkin:2.23.2
+    ports:
+      - 9411:9411
+    networks:
+      - cristian-network
+
+  cambio-db:
+    image: postgres:10.5
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=cambio_service
+    ports:
+      - 5432:5432
+    expose:
+      - 5432
+    networks:
+      - cristian-network
+
+  book-db:
+    image: postgres:10.5
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=book_service
+    ports:
+      - 5433:5432
+    expose:
+      - 5433
+    networks:
+      - cristian-network
+
+
+  naming-service:
+    image: cristianmayco/naming-server:0.0.1-SNAPSHOT
+    ports:
+      - 8761:8761
+    networks:
+      - cristian-network
+
+  api-gateway:
+    image: cristianmayco/api-gateway:0.0.1-SNAPSHOT
+    ports:
+      - 8765:8765
+    depends_on:
+      - naming-service
+    environment:
+      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://naming-server:8761/eureka/
+      SPRING.ZIPKIN.BASEURL: http://zipkin-server:9411/
+    networks:
+      - cristian-network
+
+networks:
+  cristian-network:
+    driver: bridge
+
